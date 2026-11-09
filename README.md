@@ -1,44 +1,44 @@
 # Alport_Simulation
 
-IE401 bitirme projesi için SimPy ile hazırlanmış basit bir liman simülasyonu. Gemi gelişlerini, rıhtım kuyruğunu ve yağmur nedeniyle duran operasyonları gösterir.
+A simple port simulation built with SimPy for the IE401 capstone project. It demonstrates ship arrivals, berth queues, and operations paused by rain.
 
-## Kurulum ve çalıştırma
+## Setup and execution
 
-Bu klasörde terminal açıp çalıştır:
+Open a terminal in this directory and run:
 
 ```bash
 python3 -m pip install -r requirements.txt
 python3 baby_simulation.py
 ```
 
-Python 3.13 ve SimPy 4.1.2 ile kontrol edildi.
+Checked with Python 3.13 and SimPy 4.1.2.
 
-## Dosyalar
+## Files
 
-| Dosya | Görevi |
+| File | Purpose |
 |---|---|
-| `baby_simulation.py` | Ortamı ve ortak yağmur takvimini hazırlar, modeli çalıştırır |
-| `ayarlar.py` | Rıhtım sayısını, süreleri ve olasılıkları tutar |
-| `gelisler.py` | Saatlik gemi gelişlerini oluşturur |
-| `liman.py` | Geminin kuyruğunu, operasyonunu ve ayrılışını yönetir |
-| `sonuclar.py` | Gemi sayılarını ve süreleri ekrana yazdırır |
+| `baby_simulation.py` | Prepares the environment and shared rain schedule, then runs the model |
+| `config.py` | Stores the berth count, durations, and probabilities |
+| `arrivals.py` | Generates hourly ship arrivals |
+| `port.py` | Manages each ship's queueing, operation, and departure |
+| `results.py` | Prints ship counts and durations |
 
-## Modelin kuralları
+## Model rules
 
-- Üç rıhtım vardır; her rıhtım aynı anda bir gemi alır
-- Tek gemi tipi kullanılır; her gemi 100 saat net çalışma gerektirir
-- Her saat ayrı Uniform(0,1) çekilişleriyle yağmur ve gemi gelişi belirlenir
-- Saatlik gemi geliş olasılığı 0.01575, yağmur olasılığı 0.329'dur
-- Saatte en fazla bir gemi gelir; ilk gelen gemi önce hizmet alır
-- Yağmur bütün liman için ortaktır; gemiler rıhtımlarını tutar, işleri ilerlemez
-- Hava açılınca kalan işten devam edilir
-- Liman başlangıçta boştur; gözlem aralığı `0 <= saat < 720` olarak alınır
-- `SEED = 42`, aynı ayarlarla aynı rastgele senaryoyu tekrar üretir
+- There are three berths, each serving one ship at a time
+- There is one ship type; each ship requires 100 net working hours
+- Rain and arrivals use separate Uniform(0,1) draws each hour
+- The hourly arrival probability is 0.01575 and the rain probability is 0.329
+- At most one ship arrives per hour; ships are served in arrival order
+- Rain affects the whole port; ships keep their berths but make no progress
+- Work resumes from the remaining workload when the weather becomes dry
+- The port starts empty; the observation period is `0 <= hour < 720`
+- `SEED = 42` reproduces the same random scenario with the same settings
 
-Model veri dosyası okumadan `ayarlar.py` içindeki değerlerle çalışır. Olasılıklar ve çalışma kuralları bu örnek modelin varsayımlarıdır.
+The model uses the values in `config.py` without reading any data files. The probabilities and operating rules are assumptions for this example model.
 
-## Sonuçlar
+## Results
 
-Program gelen, ayrılan, kuyrukta kalan ve rıhtımda kalan gemi sayılarını yazdırır. Ortalama kuyruk süresi yanaşan gemilerden, ortalama limanda kalış süresi ayrılan gemilerden hesaplanır. Ayrılan gemilerin yağmur beklemeleri ayrıca gösterilir.
+The program prints the numbers of arrived, departed, queued, and berthed ships. Average queue time is calculated for ships that have berthed; average port stay is calculated for ships that have departed. Rain delays are also shown for departed ships.
 
-Varsayılan ayarlarla kontrol edilen örnek çalışmada 8 gemi gelir, 7 gemi ayrılır ve 1 gemi rıhtımda kalır. Ortalama kuyruk süresi 2.62 saat, ayrılan gemilerin ortalama limanda kalışı 153 saattir.
+With the default settings, the checked example run produces 8 arrivals, 7 departures, and 1 ship remaining at a berth. Average queue time is 2.62 hours, and average port stay for departed ships is 153 hours.

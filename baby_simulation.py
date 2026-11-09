@@ -2,28 +2,28 @@ import random
 
 import simpy
 
-from ayarlar import RIHTIM_SAYISI, SEED, SIMULASYON_SURESI, YAGMUR_OLASILIGI
-from gelisler import gemi_gelisleri
-from sonuclar import sonuclari_yazdir
+from config import BERTH_COUNT, SEED, SIMULATION_HOURS, RAIN_PROBABILITY
+from arrivals import generate_arrivals
+from results import print_results
 
 
-# Model yalnızca bu dosya doğrudan çalıştırıldığında başlar.
+# Start the model only when this file is run directly.
 if __name__ == "__main__":
     random.seed(SEED)
 
-    # Listedeki her değer bir saatin havasıdır; True yağmur, False kuru demektir.
-    # Bütün gemiler aynı takvimi kullanır ve yalnızca mevcut saate bakar.
-    yagmur_takvimi = [
-        random.random() < YAGMUR_OLASILIGI
-        for _ in range(SIMULASYON_SURESI)
+    # Each value describes one hour: True means rain, False means dry weather.
+    # All ships share this schedule and read only the current hour.
+    rain_schedule = [
+        random.random() < RAIN_PROBABILITY
+        for _ in range(SIMULATION_HOURS)
     ]
 
-    # Ortak simülasyon saati ve rıhtım kaynağı hazırlanır.
+    # Create the shared simulation clock and berth resource.
     env = simpy.Environment()
-    rihtim = simpy.Resource(env, capacity=RIHTIM_SAYISI)
-    kayitlar = []
-    env.process(gemi_gelisleri(env, rihtim, yagmur_takvimi, kayitlar))
+    berths = simpy.Resource(env, capacity=BERTH_COUNT)
+    records = []
+    env.process(generate_arrivals(env, berths, rain_schedule, records))
 
-    # Tam bitiş saatindeki olaylar işlenmez; tamamlanmayan gemiler ayrıca sayılır.
-    env.run(until=SIMULASYON_SURESI)
-    sonuclari_yazdir(kayitlar, rihtim)
+    # Events at the exact end time are excluded; unfinished ships are counted separately.
+    env.run(until=SIMULATION_HOURS)
+    print_results(records, berths)
