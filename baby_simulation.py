@@ -2,7 +2,7 @@ import random
 
 import simpy
 
-from config import BERTH_COUNT, SEED, SIMULATION_HOURS, RAIN_PROBABILITY
+from config import SERVER_COUNT, SEED, SIMULATION_HOURS, RAIN_PROBABILITY
 from arrivals import generate_arrivals
 from results import print_results
 
@@ -18,12 +18,12 @@ if __name__ == "__main__":
         for _ in range(SIMULATION_HOURS)
     ]
 
-    # Create the shared simulation clock and berth resource.
+    # Create the shared simulation clock and server resource.
     env = simpy.Environment()
-    berths = simpy.Resource(env, capacity=BERTH_COUNT)
+    servers = simpy.Resource(env, capacity=SERVER_COUNT)
     records = []
-    env.process(generate_arrivals(env, berths, rain_schedule, records))
+    env.process(generate_arrivals(env, servers, rain_schedule, records))
 
     # Events at the exact end time are excluded; unfinished ships are counted separately.
     env.run(until=SIMULATION_HOURS)
-    print_results(records, berths)
+    print_results(records, servers)

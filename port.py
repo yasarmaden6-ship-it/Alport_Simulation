@@ -1,22 +1,23 @@
 from config import OPERATION_HOURS
 
 
-# Queue for a berth and advance the ship's work only during dry hours.
-def ship_process(env, ship_id, berths, rain_schedule, records):
+# Queue for a server and advance the ship's work only during dry hours.
+def ship_process(env, ship_id, ship_type, servers, rain_schedule, records):
     record = {
         "ship_id": ship_id,
+        "ship_type": ship_type,
         "arrival_time": env.now,
-        "berthing_time": None,
+        "server_assignment_time": None,
         "departure_time": None,
         "rain_delay": 0,
     }
     records.append(record)
 
-    # SimPy queues requests in arrival order when all berths are occupied.
-    with berths.request() as request:
-        # Only this ship waits here until a berth is assigned.
+    # SimPy queues requests in arrival order when all servers are occupied.
+    with servers.request() as request:
+        # Only this ship waits here until a server is assigned.
         yield request
-        record["berthing_time"] = env.now
+        record["server_assignment_time"] = env.now
         remaining_work = OPERATION_HOURS
 
         while remaining_work > 0:
@@ -31,4 +32,4 @@ def ship_process(env, ship_id, berths, rain_schedule, records):
                 remaining_work -= 1
 
         record["departure_time"] = env.now
-        # Leaving this block releases the berth; rain pauses do not release it.
+        # Leaving this block releases the server; rain pauses do not release it.

@@ -1,11 +1,14 @@
-# All durations are in hours; each berth serves one ship at a time.
-BERTH_COUNT = 3
+# All durations are in hours; each server serves one ship at a time.
+SERVER_COUNT = 3
 OPERATION_HOURS = 100  # Net working hours required per ship, excluding rain
-SIMULATION_HOURS = 720
+SIMULATION_HOURS = 1000
 
-# Arrivals and rain use separate random draws each hour.
-ARRIVAL_PROBABILITY = 0.01575
+# Set the measured arrival rate in ships per hour before running the model.
+ARRIVAL_RATE = 0.0164
+DRY_CARGO_PROBABILITY = 0.66
+
+# Rain is still sampled once per hour for the shared schedule.
 RAIN_PROBABILITY = 0.329
 
 # Reproduce the same random scenario when running with the same settings.
-SEED = 42
+SEED = 43
