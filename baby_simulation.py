@@ -2,28 +2,23 @@ import random
 
 import simpy
 
-from config import SERVER_COUNT, SEED, SIMULATION_HOURS, RAIN_PROBABILITY
 from arrivals import generate_arrivals
+from config import (
+    INITIAL_WET, SEED, SERVER_COUNT, SIMULATION_HOURS,
+    SIMULATION_START, WEATHER_SEED,
+)
+from port import Port
 from results import print_results
+from weather import generate_weather
 
 
-# Start the model only when this file is run directly.
 if __name__ == "__main__":
     random.seed(SEED)
-
-    # Each value describes one hour: True means rain, False means dry weather.
-    # All ships share this schedule and read only the current hour.
-    rain_schedule = [
-        random.random() < RAIN_PROBABILITY
-        for _ in range(SIMULATION_HOURS)
-    ]
-
-    # Create the shared simulation clock and server resource.
+    weather = generate_weather(
+        SIMULATION_START, SIMULATION_HOURS, INITIAL_WET, WEATHER_SEED
+    )
     env = simpy.Environment()
-    servers = simpy.Resource(env, capacity=SERVER_COUNT)
-    records = []
-    env.process(generate_arrivals(env, servers, rain_schedule, records))
-
-    # Events at the exact end time are excluded; unfinished ships are counted separately.
+    port = Port(env, SERVER_COUNT, weather, log_events=True)
+    env.process(generate_arrivals(env, port))
     env.run(until=SIMULATION_HOURS)
-    print_results(records, servers)
+    print_results(port)

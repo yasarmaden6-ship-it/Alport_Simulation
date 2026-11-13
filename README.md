@@ -1,52 +1,42 @@
-# Alport_Simulation
+# Alport Simulation
 
-A simple port simulation built with SimPy for the IE401 capstone project. It demonstrates ship arrivals, server queues, and operations paused by rain.
+SimPy port model with continuous-time ship arrivals and a shared seasonal CTMC weather path.
 
-## Setup and execution
-
-The current configuration uses `ARRIVAL_RATE = 0.0164` ships per hour and `SIMULATION_HOURS = 1000`. Update these values in `config.py` when needed. Pass the positive, finite rate itself, not its reciprocal; the mean inter-arrival time is `1 / ARRIVAL_RATE` hours (about 60.98 hours with the current rate).
-
-Then open a terminal in this directory and run:
+## Run
 
 ```bash
-python3 -m pip install -r requirements.txt
-python3 baby_simulation.py
+python -m pip install -r requirements.txt
+python baby_simulation.py
 ```
 
-Checked with Python 3.13 and SimPy 4.1.2.
+Keep the bundled Excel workbook beside weather.py. Set the hourly arrival rate in config.py if your estimated rate changes. The current rate is 0.0164 ships per hour.
 
-## Files
+## Model
 
-| File | Purpose |
-|---|---|
-| `baby_simulation.py` | Prepares the environment and shared rain schedule, then runs the model |
-| `config.py` | Stores the server count, durations, arrival rate, and probabilities |
-| `arrivals.py` | Generates continuous-time Poisson arrivals and samples a type after each arrival |
-| `port.py` | Manages each ship's queueing, operation, and departure |
-| `results.py` | Prints ship counts and durations |
+- The run starts on 25 November at 00:00 UTC and covers 2,232 hours, including all of 25 February. The calendar anchor uses 2026–2027.
+- weather.py reads the 12 monthly knots from the 0.1 mm spline workbook and generates one shared path using integrated transition hazards. Transition times may be fractional hours. The initial weather state is dry. WEATHER_SEED controls the path independently of the arrival seed.
+- Arrivals are homogeneous Poisson. The existing dry cargo share is 0.66. Three berths serve ships for 100 uninterrupted hours each after admission, regardless of later weather changes.
+- All waiting ships stay in one queue in their original arrival order. Equal-time arrivals keep their registration order. In dry weather, each free berth takes the first waiting ship (FCFS).
+- During rain, dry cargo stays in the queue without losing its place. Free berths take the earliest waiting container ships. Ships already admitted, including dry cargo, finish their work without interruption.
+- When rain ends, free berths immediately resume FCFS across all waiting ships. Work already in progress is never preempted. Admission uses the weather at that exact time: rain start blocks new dry cargo; rain end allows it.
+- Arrival and berth assignment are recorded separately. `rain_wait_time` (shown as `Yağmur` in the final table) measures a dry cargo ship's queue time overlapping rain, including periods when all berths are busy. It is part of total time to berth, not an additional delay or an estimate of delay caused solely by rain. It is zero for containers and is calculated on admission; ships still waiting have no value yet. Rain during service is excluded.
+- The report includes arrivals in the half-open interval `[0, SIMULATION_HOURS)`. Events exactly at the horizon are not processed. Average port stay and detailed rainy queue waits use departed ships.
 
-## Model rules
+## Terminal output
 
-- There are three servers, each representing one port service position and serving one ship at a time
-- Each ship requires 100 net working hours
-- Arrivals follow a homogeneous Poisson process with constant rate `ARRIVAL_RATE`
-- Each inter-arrival time is drawn using `random.expovariate(ARRIVAL_RATE)`; the first ship arrives after the first sampled wait
-- Time is measured in hours and can be fractional; for example, 0.25 hours is 15 minutes
-- More than one ship can arrive within an hour; ships are served in arrival order
-- After each arrival, a separate Uniform(0,1) draw assigns `dry_cargo` if the value is below 0.66, otherwise `container`
-- Ship type is stored in the ship's record and does not yet affect operation or rain handling
-- Rain still uses a shared hourly schedule with rain probability 0.329
-- Rain affects the whole port; ships keep their servers but make no progress
-- Work resumes from the remaining workload when the weather becomes dry
-- The port starts empty; the observation period is `0 <= hour < SIMULATION_HOURS` (currently 1000 hours)
-- `SEED = 43` reproduces the same random scenario with the same settings
+`python baby_simulation.py` prints a Turkish event timeline while the simulation runs, followed by a summary and departed-ship details. Each event is flushed immediately; simulation time advances as fast as SimPy runs, without real-time sleeps.
 
-The model uses the values in `config.py` without reading any data files. The configured arrival rate is 0.0164 ships per hour; the ship-type probability and operating rules are assumptions for this example model.
+- `Gün` starts at 1: hours `[0, 24)` are day 1, `[24, 48)` are day 2. `Saat` is total elapsed simulation hours, displayed to two decimals; the model still uses exact fractional times.
+- `Hava`, `Olay`, and `Gemi` show rain start/end, admission, queue entry, and departure. `Rıhtım` shows occupied/total berths. `Kuyruk`, `Kuru`, and `Kont` show waiting ships, split by cargo type, at that event.
+- Immediate admission is one `GELDİ/BAŞLADI` event, not artificial queue buildup. `SIRADAN ALINDI` shows the actual wait and whether the queue emptied. `KUYRUKTA` explains rain restrictions and/or full berths.
+- Weather changes are announced once, before ship events at the same time. Rain ending reopens FCFS admission; the next actual admission is shown separately, since berths may still be full.
+- Queue-entry messages and peak counts wait for same-time arrivals, departures, and weather callbacks to finish; a ship admitted at its arrival time does not create a false queue peak. Individual service/departure rows show the state at that event. The summary reports the highest waiting queue and the first time it occurred. A run ending at hour 2232 reports 93 observed days, without creating an event on day 94.
+- `Port(..., log_events=False)` keeps programmatic runs quiet; the main script enables the timeline. Logging does not change scheduling or random draws.
 
-The existing operation loop still checks rain at the start of each ship's one-hour step. Exact handling of weather-change times and the external weather data are outside this arrivals update.
+## Tests
 
-## Results
+```bash
+python -m unittest discover -s tests -v
+```
 
-The program prints the numbers of arrived, departed, queued, and currently assigned ships. Average queue time is calculated for all ships that have been assigned a server; average port stay is calculated for ships that have departed. Rain delays are also shown for departed ships. `server_assignment_time` records when a ship gets a server, even if rain prevents work from starting immediately.
-
-Ship records also contain `ship_type`; the current console report does not display it. The output table aligns columns and displays times to two decimal places; calculations retain full precision.
+The tests use fixed arrival times and weather transitions to check FCFS, rain admission, uninterrupted service, berth capacity, simultaneous events, the simulation horizon, and terminal event accuracy.

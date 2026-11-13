@@ -7,13 +7,10 @@ from math import isfinite
 # Geliş hızını ve kuru yük olasılığını config.py dosyasından alırız.
 from config import ARRIVAL_RATE, DRY_CARGO_PROBABILITY
 
-# Gelen geminin limandaki bekleme ve çalışma sürecini port.py yürütür.
-from port import ship_process
-
 
 # Gemilerin geliş zamanlarını üretir; her gemi geldikten sonra tipini belirler.
-# env: ortak saat, servers: kaynaklar, rain_schedule: hava takvimi, records: gemi kayıtları.
-def generate_arrivals(env, servers, rain_schedule, records):
+# env: ortak saat, port: gemi kuyruğunu ve rıhtıma kabulü yöneten liman.
+def generate_arrivals(env, port):
     # Lambda girilmiş, pozitif ve sonlu olmalı; birimi gemi/saat olmalıdır.
     if ARRIVAL_RATE is None or not isfinite(ARRIVAL_RATE) or ARRIVAL_RATE <= 0:
         # Geçerli lambda yoksa bir değer uydurmak yerine açıklayıcı hatayla dururuz.
@@ -44,6 +41,6 @@ def generate_arrivals(env, servers, rain_schedule, records):
             # Sayı 0.66 veya üzerindeyse konteyner gemisi olur.
             ship_type = "container"
 
-        # Geminin liman sürecini SimPy'ye ekleriz; tip bilgisi şimdilik yalnızca kaydedilir.
-        # Geminin ayrılmasını beklemeden döngüye dönüp sonraki geliş süresini çekeriz.
-        env.process(ship_process(env, ship_id, ship_type, servers, rain_schedule, records))
+        # Gemiyi ortak kuyruğa ekleriz; liman hava durumuna göre rıhtıma kabul eder.
+        # Geminin ayrılmasını beklemeden sonraki geliş süresini çekeriz.
+        port.arrive(ship_id, ship_type)
