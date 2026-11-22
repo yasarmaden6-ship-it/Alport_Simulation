@@ -6,7 +6,7 @@ SimPy port model with continuous-time ship arrivals and a shared seasonal CTMC w
 
 ```bash
 python -m pip install -r requirements.txt
-python baby_simulation.py
+python simulation.py
 ```
 
 Keep the bundled Excel workbook beside weather.py. Set the hourly arrival rate in config.py if your estimated rate changes. The current rate is 0.0164 ships per hour.
@@ -24,7 +24,7 @@ Keep the bundled Excel workbook beside weather.py. Set the hourly arrival rate i
 
 ## Terminal output
 
-`python baby_simulation.py` prints a Turkish event timeline while the simulation runs, followed by a summary and departed-ship details. Each event is flushed immediately; simulation time advances as fast as SimPy runs, without real-time sleeps.
+`python simulation.py` prints a Turkish event timeline while the simulation runs, followed by a summary and departed-ship details. Each event is flushed immediately; simulation time advances as fast as SimPy runs, without real-time sleeps.
 
 - `Gün` starts at 1: hours `[0, 24)` are day 1, `[24, 48)` are day 2. `Saat` is total elapsed simulation hours, displayed to two decimals; the model still uses exact fractional times.
 - `Hava`, `Olay`, and `Gemi` show rain start/end, admission, queue entry, and departure. `Rıhtım` shows occupied/total berths. `Kuyruk`, `Kuru`, and `Kont` show waiting ships, split by cargo type, at that event.

@@ -9,11 +9,11 @@ DRY_CARGO_PROBABILITY = 0.66
 
 
 # Reproduce the same random scenario when running with the same settings.
-SEED = 43
+SEED = 1
 
 # UTC calendar anchor for the seasonal spline.
 from datetime import datetime, timezone
 
 SIMULATION_START = datetime(2026, 11, 25, tzinfo=timezone.utc)
 INITIAL_WET = False
-WEATHER_SEED = 401
+WEATHER_SEED = 2
